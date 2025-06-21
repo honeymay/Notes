@@ -1,0 +1,75 @@
+5 Labs on CCNP Encor June, July, August
+
+LABccnp1 : Rommon config on Switch: same vlan/ diff vlan:
+port-mirroring:
+corebaba:
+conf t
+monitor session 1 source interface fa0/5, fa0/7, fa0/3 both
+monitor session 1 destination interface fa0/1
+do sh monitor
+no monitor session 1
+
+LABccnp2: Control Plane Policing: COPP: "ac-cm-pm-sp"
+conf t
+ip access-list extended 100
+ permit icmp any any
+
+ip access-list extended PINGITO
+ permit icmp any any
+
+class-map CMPING
+ match access-group 100
+
+policy-map NOBIGPING
+ class CMPING
+ police 8000 conform-action transmit exceed-action drop
+exit
+
+control-plane
+ service-policy input NOBIGPING
+
+do sh  policy-map control-plane
+
+cmd
+ping 192.168.103.11 -t -ls 1500
+
+LABccnp3: configuring Netflow to report All traffic:
+Part 1: Flow record
+conf t
+flow record CCNP8-CUSTOM-OUT
+ description custom dataflow records for all outbountraffic
+ match ipv4 destination address
+ match transport destination-port
+ collect counter bytes
+ collect counter packets
+do show flow record CCNP8-CUSTOM-OUT
+
+Part 2: flow exporter
+conf t
+flow exporter CCNP8-COLLECTOR-HOST
+ destination 192.168.103.2
+ export-protocol netflow-v9
+ transport udp 9999
+do sh flow exporter CCNP8-COLLECTOR-HOST
+
+Part 3: flow monitor and associate
+conf t
+flow monitor CCNP8-INBOUND-MONITOR
+ record netflow ipv4 original-input
+ cache timeout active 30
+ exporter CCNP8-COLLECTOR-HOST
+exit
+
+flow monitor CCNP8-OUTBOUND-MONITOR
+ record CCNP8-CUSTOM-OUT
+ cache timeout active 30
+ exporter CCNP8-COLLECTOR-HOST
+do sh flow monitor
+
+Part 4: LABS in the EXAM
+conf t
+interface Gi3
+ ip flow monitor CCNP8-INBOUND-MONITOR input
+ ip flow monitor CCNP8-OUTBOUND-MONITOR output
+exit
+
