@@ -1,0 +1,40 @@
+LISP CONFGIURATION: MAP SERVER/MAP RESOLVER.
+R2: mapserver/mapresolver: can Ping everyone:
+config t
+router lisp
+ipv4 map-server 
+ipv4 map-resolver
+!
+lisp site siteR3
+eid-prefix 3.3.3.3/32           !Endpoint IDentifier to Manila
+authentication-key rivansite3
+!
+lisp site siteR1
+eid-prefix 1.1.1.1/32          	!Endpoint IDentifier to Makati
+authentication-key rivansite1
+!
+ip lisp map-server
+ip lisp map-resolver
+!
+end
+
+@ETR/ITR: (Egress/Ingress Tunnel Routing)
+R1 (Makati):
+config t
+router Lisp
+database-mapping 1.1.1.1/32 130.0.0.1 priority 1 weight 100
+ipv4 itr
+ipv4 itr map-resolver 2.2.2.2      !map to HQ Server
+ipv4 etr
+ipv4 etr map-server 2.2.2.2  key rivansite1
+end
+
+R3 (Manila):
+config t
+router Lisp
+database-mapping 3.3.3.3/32 140.0.0.3 priority 1 weight 100
+ipv4 itr
+ipv4 itr map-resolver 2.2.2.2      !map to HQ Server
+ipv4 etr
+ipv4 etr map-server 2.2.2.2 key rivansite3
+end

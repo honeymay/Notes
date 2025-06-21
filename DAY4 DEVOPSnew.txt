@@ -1,0 +1,49 @@
+NMAP Linux
+nmap -v ccp.edu.ph
+
+Python
+Loopback 
+import cli
+
+cmd1 = '''hostname NETDEVOPS
+no int loop 4
+no int loop 5
+no int loop 6
+end
+'''
+cli.configurep(cmd1)
+
+----------------------
+import cli
+
+cmd1 = '''hostname NETDEVOPS
+***no ip access-list standard noporn****
+ip access-list standard noporn
+deny 66.254.0.0 0.0.255.255
+deny 185.88.0.0 0.0.255.255
+permit any 
+int gi1
+ip access-group noporn in
+end
+'''
+cli.configurep(cmd1)
+
+------------------------------------
+import cli
+
+cmd1 = '''hostname NETDEVOPS
+router eigrp 100
+network 10.0.0.0
+network 172.16.2.0
+network 192.168.3.0
+exit
+router ospf 1
+network 10.1.1.0 0.0.0.3 area 1
+network 172.16.2.0 0.0.0.3 area 1
+network 192.168.3.0 0.0.0.3 area 1
+end
+'''
+cli.configurep(cmd1)
+
+
+

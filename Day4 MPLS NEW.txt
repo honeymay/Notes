@@ -1,0 +1,329 @@
+D1-chinabank alabang | CHB-Alabang
+enable
+configure terminal
+! hostname D1-CHBAlabang
+ enable secret pass
+ no ip domain-lookup
+ logging console
+ alias exec bp show ip int brief | ex una
+ alias exec sr show ip route
+ alias exec sp show ip protocols
+ ip subnet-zero
+ int Ethernet1/1
+   ip address 10.1.1.1 255.255.255.252
+   no shut
+end
+
+ISP1 chinabank bgc | CHB-BGC
+enable
+configure terminal
+! hostname I1-CHBBgc
+ enable secret pass
+ no ip domain-lookup
+ logging console
+ alias exec bp show ip int brief | ex una
+ alias exec sr show ip route
+ alias exec sp show ip protocols
+ ip subnet-zero
+ int Eth 1/3
+   ip address 10.1.1.5 255.255.255.252
+   no shut
+
+D2-SCBAlabang | SCB-Alabang
+enable
+configure terminal
+! hostname D2-SCBAlabang
+ enable secret pass
+ no ip domain-lookup
+ logging console
+ ip subnet-zero
+ int Ethernet1/1
+   ip address 10.1.1.1 255.255.255.252
+   no shut
+end
+
+ISp2-SCBBGC | SCB-BGC
+configure terminal
+! hostname I2-SCBBgc
+ enable secret pass
+ no ip domain-lookup
+ logging console
+ alias exec bp show ip int brief | ex una
+ alias exec sr show ip route
+ alias exec sp show ip protocols
+ ip subnet-zero
+ int  Eth 1/3
+   ip address 10.1.1.5 255.255.255.252
+   no shut
+end
+
+
+VRF Conf
+PE-A
+config t
+ ip vrf clientOSIa
+   rd 999:6
+   route-target 64999:6
+ ip vrf clientSCBa
+   rd 999:7
+   route-target 64999:7
+ ip vrf clientCHBa
+   rd 999:8
+   route-target 64999:8 
+ip vrf clientWTWa
+   rd 888:9
+   route-target 69666:9
+ip vrf client63Oa
+   rd 888:10
+   route-target 69666:10
+   end
+
+PE-Z
+config t
+ ip vrf clientOSIb
+   rd 999:6
+   route-target 64999:6
+ ip vrf clientSCBb
+   rd 999:7
+   route-target 64999:7
+ ip vrf clientCHBb
+   rd 999:8
+   route-target 64999:8 
+ip vrf clientWTWb
+   rd 888:9
+   route-target 69666:9
+ip vrf client63Ob
+   rd 888:10
+   route-target 69666:10
+   end
+
+STEP3: CONFIGURING VRF INTERFACES ON PE ROUTERS:
+
+R4:PEa
+config t
+ int Ethernet1/1
+   ip vrf forwarding clientSCBa
+   ip address 10.1.1.2 255.255.255.252
+   no shut
+ int Ethernet1/0
+   ip vrf forwarding clientCHBa
+   ip address 10.1.1.2 255.255.255.252
+   no shut
+ int Ethernet0/1
+   ip vrf forwarding client63Oa
+   ip address 10.1.1.2 255.255.255.252
+   no shut
+ int Ethernet0/0
+   ip vrf forwarding clientWTWa
+   ip address 10.1.1.2 255.255.255.252
+   no shut
+end
+
+R1:PEz: 
+config t
+ int Ethernet1/2
+  ip vrf forwarding clientSCBb
+  ip address 10.1.1.6 255.255.255.252
+  no shut
+ int Ethernet1/1
+  ip vrf forwarding clientCHBb
+  ip address 10.1.1.6 255.255.255.252
+  no shut
+ int Ethernet0/1
+  ip vrf forwarding client63Ob
+  ip address 10.1.1.6 255.255.255.252
+  no shut
+ int Ethernet0/0
+  ip vrf forwarding clientWTWb
+  ip address 10.1.1.6 255.255.255.252
+  no shut
+end
+
+STEP5: INDIVIDUAL VIRTUAL/LOGICAL ROUTER VRF CONFIGURATION.
+
+R4:PEa
+R4:PEa
+config t
+ router eigrp 90
+  address-family ipv4 vrf clientCHBa
+  autonomous-system 90
+  network 10.0.0.0
+  no auto-summary
+  exit
+  
+***
+
+R1:PeZ:
+config t
+  router eigrp 90
+   address-family ipv4 vrf clientCHBb
+   autonomous-system 90
+   network 10.0.0.0
+   no auto-summary
+   exit
+
+
+R4:PEa
+config t
+ router ospf 69 vrf clientSCBa
+ network 0.0.0.0 0.0.0.0 area 0
+end
+ 
+***
+
+R1-:PeZ
+config t
+ router ospf 69 vrf clientSCBb
+  network 0.0.0.0 0.0.0.0 area 0
+  exit
+end
+
+STEP6: ROUTE REDISTRIBUTIONS:
+
+7.2:EIGRP-mBGP -EIGRP
+
+R4:PEa
+config t
+ router bgp 64999
+  address-family ipv4 vrf clientCHBa
+  redistribute eigrp 90 metric 1
+  exit
+ router eigrp 90
+  address-family ipv4 vrf clientCHBa
+   autonomous-system 90
+   network 10.0.0.0
+   no auto-summary
+   redistribute bgp 64999 metric 100000 10 1 255 1512
+   !seed metric,sh int fa1/2      bw  de/10 load rely mtu
+   exit-address-family
+end
+
+R1:PEz
+config t
+ router bgp 64999
+  address-family ipv4 vrf clientCHBb
+  redistribute eigrp 90 metric 1
+  exit
+ router eigrp 90
+  address-family ipv4 vrf clientCHBb
+   autonomous-system 90
+   network 10.0.0.0
+   no auto-summary
+   redistribute bgp 64999 metric 100000 10 1 255 1512
+   exit-address-family
+end
+
+OSPF - mBGP -OSPF
+R4:PEa
+config t
+ router bgp 64999
+  address-family ipv4 vrf clientSCBa
+  no redistribute ospf 1
+  redistribute ospf 69
+  no auto-summary
+  exit
+ router ospf 69 vrf clientSCBa
+  redistribute bgp 64999 metric-type 1 subnets
+  network 0.0.0.0 0.0.0.0 area 0
+end
+
+R1:PEz
+config t
+ router bgp 64999
+  address-family ipv4 vrf clientSCBb
+  no redistribute ospf 1
+  redistribute ospf 69
+  no auto-summary
+  exit
+ router ospf 69 vrf clientSCBb
+  redistribute bgp 64999 metric-type 1 subnets
+  network 0.0.0.0 0.0.0.0 area 0
+end
+
+EXTRA: SOME NETWORKS/CLIENTS ARE USING RIP VERSION 2:
+PE-A
+config t
+ router rip
+  version 2
+  address-family ipv4 vrf client63Oa
+   version 2
+   network 10.0.0.0
+   no auto-summary
+  address-family ipv4 vrf client63Oa
+   version 2
+   network 10.0.0.0
+   no auto-summary
+
+***
+
+PE-Z
+config t
+ router rip
+  version 2
+  address-family ipv4 vrf client63Ob
+   version 2
+   network 10.0.0.0
+   no auto-summary
+  address-family ipv4 vrf client63Ob
+   version 2
+   network 10.0.0.0
+   no auto-summary
+
+PE-A
+config t
+ router bgp 64999
+  address-family ipv4 vrf client63Oa
+   redistribute rip metric 1
+  address-family ipv4 vrf client63Oa
+   redistribute rip metric 1
+   exit
+ !
+ router rip
+  address-family ipv4 vrf client63Oa
+   redistribute bgp 64999 metric 1
+  address-family ipv4 vrf client63Oa
+   redistribute bgp 64999 metric 1
+  exit
+
+PE-Z
+config t
+ router bgp 64999
+  address-family ipv4 vrf client63Ob
+   redistribute rip metric 1
+  address-family ipv4 vrf client63Ob
+   redistribute rip metric 1
+   exit
+ !
+ router rip
+  address-family ipv4 vrf client63Ob
+   redistribute bgp 64999 metric 1
+  address-family ipv4 vrf client63Ob
+   redistribute bgp 64999 metric 1
+  exit
+
+
+@BSP-A/B       !(other BSP must not ping prior to configuring)
+A
+conf t
+int lo0
+ip add 200.0.0.1 255.255.255.0
+router rip
+version 2
+no auto-summary
+network 200.0.0.0 
+network 100.0.0.0
+B
+conf t
+int lo1
+ip add 100.0.0.1 255.255.255.0
+router rip
+version 2
+no auto-summary
+network 200.0.0.0 
+network 100.0.0.0
+
+BDO - OSI clientOSIa 6
+PNB - CHB clientCHBa 7
+BPI - SCB clientSCBa 8
+BPO - WTW clientWTWa 9
+BSP - 63O client63Oa 10 

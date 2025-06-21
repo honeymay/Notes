@@ -1,0 +1,67 @@
+https://github.com/art-stacks/S2S-VPN
+
+ip -4 addr
+[root@localhost ~]# systemctl start semaphore
+
+[ctaas]
+10.31.1.2
+
+[ctaas:vars]
+ansible_user=admin
+ansible_password=C1sc0123
+ansible_connection=network_cli
+ansible_network_os=ios
+
+http://208.8.8.163:3000/ - browser
+Key Store(Createnewkey)
+CoreTaas - SSH key - Passphrase:C1sc0123 - Paste Private key
+
+network devices(get private key)
+crypto key export rsa devops pem terminal 3des C1sc0123
+
+Integrate Repositories from Github
+Access Key: None - Branch: Main
+
+Inventory(Ansible Inven)
+Name: DAY1-CoreTaas - User Cred: CoreTaas - Type: File
+
+Task Template
+Name: CoreTaas
+path to playbook file: ctaas.yml
+inventory: Day1-CoreTaas
+Repository:honey-repo
+Variable Group: Empty
+
+Ansible 
+Agentless Automation
+Phyton
+YML - yet another markup language
+Playbook (hosts)
+Tasks
+
+Terraform
+
+cd /etc/terraform-files/
+ls
+addloop.tf
+cat addloop.tf
+nano addloop.tf
+
+terraform init
+terraform plan
+terraform apply
+ls
+rm -rf terraform.tfstate
+
+
+https://account.meraki.com/login
+rivanmeraki1@gmail.com
+C1sc0,123
+
+Gmail Account(if ask for verification)
+rivanmeraki1@gmail.com
+C1sc0123$$
+
+
+S2S VPN
+sudo su
