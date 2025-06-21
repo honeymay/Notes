@@ -73,3 +73,5 @@ interface Gi3
  ip flow monitor CCNP8-OUTBOUND-MONITOR output
 exit
 
+
+3 weeks before ask for latest lab/MCQ  chat group
